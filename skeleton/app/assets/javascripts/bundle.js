@@ -131,6 +131,7 @@ var fetchChirps = exports.fetchChirps = function fetchChirps() {
 var likeChirp = exports.likeChirp = function likeChirp(id) {
   return function (dispatch) {
     return (0, _chirps.postLikeToChirp)(id).then(function (chirp) {
+      console.log(chirp);
       return dispatch(receiveSingleChirp(chirp));
     });
   };
@@ -182,6 +183,7 @@ var logoutCurrentUser = function logoutCurrentUser() {
 var createNewUser = exports.createNewUser = function createNewUser(formUser) {
     return function (dispatch) {
         return (0, _session.postUser)(formUser).then(function (user) {
+            console.log(user);
             return dispatch(receiveCurrentUser(user));
         });
     };
@@ -198,7 +200,7 @@ var login = exports.login = function login(formUser) {
 var logout = exports.logout = function logout() {
     return function (dispatch) {
         return (0, _session.deleteSession)().then(function () {
-            return dispatch * logoutCurrentUser();
+            return dispatch(logoutCurrentUser());
         });
     };
 };
@@ -291,6 +293,8 @@ var _signup_container = __webpack_require__(/*! ./session/signup_container */ ".
 
 var _signup_container2 = _interopRequireDefault(_signup_container);
 
+var _route_utils = __webpack_require__(/*! ../utils/route_utils */ "./frontend/utils/route_utils.jsx");
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 exports.default = function () {
@@ -299,8 +303,8 @@ exports.default = function () {
     null,
     _react2.default.createElement(_reactRouterDom.Route, { path: '/', component: _nav_bar_container2.default }),
     _react2.default.createElement(_reactRouterDom.Route, { exact: true, path: '/', component: _home2.default }),
-    _react2.default.createElement(_reactRouterDom.Route, { path: '/chirps', component: _chirp_index_container2.default }),
-    _react2.default.createElement(_reactRouterDom.Route, { path: '/signup', component: _signup_container2.default })
+    _react2.default.createElement(_route_utils.ProtectedRoute, { path: '/chirps', component: _chirp_index_container2.default }),
+    _react2.default.createElement(_route_utils.AuthRoute, { path: '/signup', component: _signup_container2.default })
   );
 };
 
@@ -566,7 +570,21 @@ exports.default = function (_ref) {
   var currentUser = _ref.currentUser,
       logout = _ref.logout;
 
-  var display = _react2.default.createElement(
+  var display = currentUser ? _react2.default.createElement(
+    'div',
+    null,
+    _react2.default.createElement(
+      'p',
+      null,
+      'Hello, ',
+      currentUser.username
+    ),
+    _react2.default.createElement(
+      'button',
+      { onClick: logout },
+      'Log out'
+    )
+  ) : _react2.default.createElement(
     'div',
     null,
     _react2.default.createElement(
@@ -623,24 +641,29 @@ var _nav_bar = __webpack_require__(/*! ./nav_bar */ "./frontend/components/nav_b
 
 var _nav_bar2 = _interopRequireDefault(_nav_bar);
 
+var _session = __webpack_require__(/*! ../../actions/session */ "./frontend/actions/session.js");
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var mapStateToProps = function mapStateToProps(state) {
+  return {
+    currentUser: state.session.currentUser
+  };
+};
 
 // Comment this back in after you have built the login functionality
 
-// import { logout } from '../../actions/session';
-
-// const mapStateToProps = state => ({
-//   currentUser: state.session.currentUser,
-// });
-
-// const mapDispatchToProps = dispatch => ({
-//   logout: () => dispatch(logout()),
-// });
-
+var mapDispatchToProps = function mapDispatchToProps(dispatch) {
+  return {
+    logout: function logout() {
+      return dispatch((0, _session.logout)());
+    }
+  };
+};
 
 // Comment this out when you have built the login functionality
-var mapStateToProps = null;
-var mapDispatchToProps = null;
+// const mapStateToProps = null;
+// const mapDispatchToProps = null;
 
 exports.default = (0, _reactRedux.connect)(mapStateToProps, mapDispatchToProps)(_nav_bar2.default);
 
@@ -830,7 +853,7 @@ var Signup = function (_React$Component) {
             var _this3 = this;
 
             e.preventDefault();
-            debugger;
+            // debugger
             this.props.createNewUser(this.state).then(function () {
                 return _this3.props.history.push('/chirps');
             });
@@ -1174,6 +1197,66 @@ var deleteLikeFromChirp = exports.deleteLikeFromChirp = function deleteLikeFromC
     data: { id: id }
   });
 };
+
+/***/ }),
+
+/***/ "./frontend/utils/route_utils.jsx":
+/*!****************************************!*\
+  !*** ./frontend/utils/route_utils.jsx ***!
+  \****************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+exports.ProtectedRoute = exports.AuthRoute = undefined;
+
+var _react = __webpack_require__(/*! react */ "./node_modules/react/react.js");
+
+var _react2 = _interopRequireDefault(_react);
+
+var _reactRedux = __webpack_require__(/*! react-redux */ "./node_modules/react-redux/es/index.js");
+
+var _reactRouterDom = __webpack_require__(/*! react-router-dom */ "./node_modules/react-router-dom/es/index.js");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var mapStateToProps = function mapStateToProps(state) {
+    return {
+        loggedIn: Boolean(state.session.currentUser)
+    };
+};
+
+var Auth = function Auth(_ref) {
+    var loggedIn = _ref.loggedIn,
+        path = _ref.path,
+        Component = _ref.component;
+    return _react2.default.createElement(_reactRouterDom.Route, {
+        path: path,
+        render: function render(props) {
+            return loggedIn ? _react2.default.createElement(_reactRouterDom.Redirect, { to: '/' }) : _react2.default.createElement(Component, props);
+        }
+    });
+};
+
+var Protected = function Protected(_ref2) {
+    var loggedIn = _ref2.loggedIn,
+        path = _ref2.path,
+        Component = _ref2.component;
+    return _react2.default.createElement(_reactRouterDom.Route, {
+        path: path,
+        render: function render(props) {
+            return loggedIn ? _react2.default.createElement(Component, props) : _react2.default.createElement(_reactRouterDom.Redirect, { to: '/signup' });
+        }
+    });
+};
+
+var AuthRoute = exports.AuthRoute = (0, _reactRouterDom.withRouter)((0, _reactRedux.connect)(mapStateToProps)(Auth));
+var ProtectedRoute = exports.ProtectedRoute = (0, _reactRouterDom.withRouter)((0, _reactRedux.connect)(mapStateToProps)(Protected));
 
 /***/ }),
 

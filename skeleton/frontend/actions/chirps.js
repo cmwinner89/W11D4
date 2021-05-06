@@ -18,7 +18,10 @@ export const fetchChirps = () => dispatch => getChirps()
   .then(chirps => dispatch(receiveChirps(chirps)));
 
 export const likeChirp = id => dispatch => postLikeToChirp(id)
-  .then(chirp => dispatch(receiveSingleChirp(chirp)));
+  .then(chirp => {
+    console.log(chirp);
+    return dispatch(receiveSingleChirp(chirp))
+  });
 
 export const unLikeChirp = id => dispatch => deleteLikeFromChirp(id)
   .then(chirp => dispatch(receiveSingleChirp(chirp)));
